@@ -1,14 +1,22 @@
 
 import requests
 import os
-from datetime import datetime, timedelta, timezone 
+import pytz 
+import json
+from datetime import datetime
+from dotenv import load_dotenv
+from timezonefinder import TimezoneFinder
 
+# Initialize TimezoneFinder once for efficiency
+tf = TimezoneFinder()
 # Load environment variables from .env file
 #load_dotenv()
 
 # Get API key from environment variable
 #API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
 #
+
+DEFAULT_SETTINGS_FILE = 'default_settings.json'
 
 def get_weather_data(city_name: str, api_key: str) -> dict | None:
 
@@ -62,23 +70,79 @@ def display_weather(weather_data: dict):
     else:
         print("Could not display weather data.")
 
-def get_local_time_at_location(timezone_offset_seconds: int) -> datetime:
+def get_times_for_location(user_local_tz_str: str, location_lat: float, location_lon: float) -> tuple[str, str | None, str | None]:
     """
-    Calculates the current local time at a location based on its UTC offset.
+    Calculates and formats current times for the user's local timezone and the specified location's timezone.
 
     Args:
-        timezone_offset_seconds (int): The timezone offset from UTC in seconds.
+        user_local_tz_str (str): The IANA timezone string for the user's local system (e.g., 'America/New_York').
+        location_lat (float): Latitude of the location.
+        location_lon (float): Longitude of the location.
 
     Returns:
-        datetime: The current local datetime object for that timezone.
+        tuple[str, str | None, str | None]:
+            - Formatted string of user's current local time.
+            - Formatted string of location's current time (or None if timezone not found).
+            - The IANA timezone string of the location (or None if not found).
     """
-    # Get current UTC time
-    utc_now = datetime.now(timezone.utc)
+    time_format = "%A, %B %d, %Y, %I:%M %p %Z%z" # Added %Z%z to show timezone abbreviation and offset
 
-    # Create a timedelta object from the offset
-    offset_delta = timedelta(seconds=timezone_offset_seconds)
+    #User's current local time
+    try:
+        user_tz = pytz.timezone(user_local_tz_str)
+        user_time = datetime.now(user_tz)
+        formatted_user_time = user_time.strftime(time_format)
+    except pytz.UnknownTimeZoneError:
+        formatted_user_time = "Could not determine your local time (invalid timezone)."
+        user_tz = None # Indicate that user_tz could not be set
 
-    # Apply the offset to UTC time
-    local_time_at_location = utc_now + offset_delta
+    #Location's current time
+    formatted_location_time = None
+    location_tz_str = None
 
-    return local_time_at_location
+    if location_lat is not None and location_lon is not None:
+        location_tz_str = tf.timezone_at(lng=location_lon, lat=location_lat)
+        if location_tz_str:
+            try:
+                location_tz = pytz.timezone(location_tz_str)
+                # If we have a valid user_tz, convert from that to location_tz
+                if user_tz:
+                    location_time = user_time.astimezone(location_tz)
+                else: # Fallback if user_tz detection failed, use UTC as reference
+                    location_time = datetime.now(pytz.utc).astimezone(location_tz)
+                formatted_location_time = location_time.strftime(time_format)
+            except pytz.UnknownTimeZoneError:
+                formatted_location_time = f"Could not determine time for location (unknown timezone: {location_tz_str})."
+        else:
+            formatted_location_time = "Could not determine timezone for location coordinates."
+    else:
+        formatted_location_time = "Location coordinates not available for timezone lookup."
+
+    return formatted_user_time, formatted_location_time, location_tz_str
+
+def load_default_city() -> str | None:
+    """
+    Loads the default city name from the DEFAULT_SETTINGS_FILE.
+    Returns the city name if found, otherwise None.
+    """
+    if os.path.exists(DEFAULT_SETTINGS_FILE):
+        try:
+            with open(DEFAULT_SETTINGS_FILE, 'r') as f:
+                settings = json.load(f)
+                return settings.get('default_city')
+        except (json.JSONDecodeError, KeyError):
+            print(f"Warning: Could not read default city from {DEFAULT_SETTINGS_FILE}. File might be corrupted or malformed.")
+            return None
+    return None
+
+def save_default_city(city_name: str):
+    """
+    Saves the provided city name as the default city in the DEFAULT_SETTINGS_FILE.
+    """
+    settings = {'default_city': city_name}
+    try:
+        with open(DEFAULT_SETTINGS_FILE, 'w') as f:
+            json.dump(settings, f, indent=4)
+        print(f"Default city '{city_name}' saved to {DEFAULT_SETTINGS_FILE}")
+    except IOError as e:
+        print(f"Error saving default city to {DEFAULT_SETTINGS_FILE}: {e}")
