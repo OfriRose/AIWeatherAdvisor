@@ -24,6 +24,11 @@ def initialize_session_state():
         st.session_state.last_queried_coords = None
     if 'default_city' not in st.session_state:
         st.session_state.default_city = load_default_city()
+    # Initialize AI-related session state variables
+    if 'ai_question' not in st.session_state:
+        st.session_state.ai_question = ""
+    if 'ai_response' not in st.session_state:
+        st.session_state.ai_response = None
 
 def update_weather_display(weather_data: dict) -> None:
     """Update session state with new weather data and display it."""

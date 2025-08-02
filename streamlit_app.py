@@ -9,12 +9,14 @@ from src.weather_checker.main import (
     display_time_info,
     save_default_city
 )
+from src.weather_checker.ai_assistant import get_gemini_weather_advice
 
 # Load API KEY
 load_dotenv()
-API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
+OPEN_WHEATHER_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-if not API_KEY:
+if not OPEN_WHEATHER_API_KEY:
     st.error("API Key not found. Please set OPENWEATHERMAP_API_KEY in your .env file.")
     st.stop()
 
@@ -48,7 +50,7 @@ city_name_input = st.text_input(
 if st.button('Get Weather', key='get_weather_button'):
     if city_name_input:
         with st.spinner(f'Fetching weather for {city_name_input}...'):
-            weather_data = get_weather_data(city_name_input, API_KEY)
+            weather_data = get_weather_data(city_name_input, OPEN_WHEATHER_API_KEY)
 
         if weather_data:
             st.success(f"Weather data for {city_name_input} fetched successfully!")
@@ -89,3 +91,43 @@ if st.session_state.displayed_weather_info:
         st.metric(label="Wind Speed", value=f"{weather['wind_speed']} m/s")
 
     st.info(f"Conditions: {weather['weather_description']}")
+
+    st.markdown("---")
+    st.subheader("AI Weather Assistant")
+
+    if not GEMINI_API_KEY:
+        st.info("Please add your Gemini API Key to the .env file to use the AI assistant.")
+    else:
+        # Text area for user question
+        user_ai_question = st.text_area(
+            "Ask me a question about the current weather:",
+            value=st.session_state.ai_question,
+            placeholder="Ask a question about the weather, e.g.:\n• What should I pack?\n• Is it good weather for outdoor activities?\n• Should I bring an umbrella?",
+            key="ai_question_input",
+            height=70
+        )
+
+        # Button to get AI advice
+        if st.button("Get AI Advice"):
+            if user_ai_question:
+                # Store the question in session state
+                st.session_state.ai_question = user_ai_question
+
+                with st.spinner("Getting AI advice..."):
+                    # Call the Gemini function with current weather info and user question
+                    st.session_state.ai_response = get_gemini_weather_advice(
+                        st.session_state.displayed_weather_info,
+                        user_ai_question
+                    )
+                st.rerun() # Rerun to display the AI response
+
+            else:
+                st.warning("Please enter a question for the AI assistant.")
+
+        # Display AI's response if available in session state
+        if st.session_state.ai_response:
+            st.info("🤖 **AI's Advice:**")
+            st.write(st.session_state.ai_response)
+        elif st.session_state.ai_question and not st.session_state.ai_response:
+            # This handles cases where AI call might have failed and response is None
+            st.error("Could not get AI advice. Please check your Gemini API key and try again.")
