@@ -1,26 +1,17 @@
 
 import requests
 import os
-from dotenv import load_dotenv # Import load_dotenv
+from datetime import datetime, timedelta, timezone 
 
 # Load environment variables from .env file
-load_dotenv()
+#load_dotenv()
 
 # Get API key from environment variable
-API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
-
+#API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
+#
 
 def get_weather_data(city_name: str, api_key: str) -> dict | None:
-    """
-    Fetches current weather data for a given city using the OpenWeatherMap API.
 
-    Args:
-        city_name (str): The name of the city.
-        api_key (str): Your OpenWeatherMap API key.
-
-    Returns:
-        dict | None: A dictionary containing weather data if successful, None otherwise.
-    """
     base_url = "http://api.openweathermap.org/data/2.5/weather?"
     complete_url = f"{base_url}q={city_name}&appid={api_key}&units=metric"
 
@@ -71,18 +62,23 @@ def display_weather(weather_data: dict):
     else:
         print("Could not display weather data.")
 
-def main():
+def get_local_time_at_location(timezone_offset_seconds: int) -> datetime:
+    """
+    Calculates the current local time at a location based on its UTC offset.
 
-    print("Welcome to the Weather Checker Application!")
+    Args:
+        timezone_offset_seconds (int): The timezone offset from UTC in seconds.
 
-    while True:
-        city_input = input("\nEnter a city name (or 'q' to quit): ").strip()
-        if city_input.lower() == 'q':
-            print("Exiting application. Goodbye!")
-            break
+    Returns:
+        datetime: The current local datetime object for that timezone.
+    """
+    # Get current UTC time
+    utc_now = datetime.now(timezone.utc)
 
-        weather = get_weather_data(city_input, API_KEY)
-        display_weather(weather)
+    # Create a timedelta object from the offset
+    offset_delta = timedelta(seconds=timezone_offset_seconds)
 
-if __name__ == "__main__":
-    main()
+    # Apply the offset to UTC time
+    local_time_at_location = utc_now + offset_delta
+
+    return local_time_at_location
