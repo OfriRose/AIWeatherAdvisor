@@ -6,17 +6,72 @@ import json
 from datetime import datetime
 from dotenv import load_dotenv
 from timezonefinder import TimezoneFinder
+import streamlit as st
+import tzlocal
 
 # Initialize TimezoneFinder once for efficiency
 tf = TimezoneFinder()
-# Load environment variables from .env file
-#load_dotenv()
-
-# Get API key from environment variable
-#API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
-#
 
 DEFAULT_SETTINGS_FILE = 'default_settings.json'
+
+def initialize_session_state():
+    """Initialize all session state variables needed for the Streamlit app."""
+    if 'displayed_weather_info' not in st.session_state:
+        st.session_state.displayed_weather_info = None
+    if 'last_queried_city' not in st.session_state:
+        st.session_state.last_queried_city = None
+    if 'last_queried_coords' not in st.session_state:
+        st.session_state.last_queried_coords = None
+    if 'default_city' not in st.session_state:
+        st.session_state.default_city = load_default_city()
+
+def update_weather_display(weather_data: dict) -> None:
+    """Update session state with new weather data and display it."""
+    if weather_data:
+        # Parse and store display data into session state
+        st.session_state.displayed_weather_info = {
+            "city": weather_data.get("name"),
+            "country": weather_data.get("sys", {}).get("country"),
+            "temperature": weather_data.get("main", {}).get("temp"),
+            "feels_like": weather_data.get("main", {}).get("feels_like"),
+            "humidity": weather_data.get("main", {}).get("humidity"),
+            "weather_description": weather_data.get("weather", [])[0].get("description").capitalize() 
+                if weather_data.get("weather") else "N/A",
+            "wind_speed": weather_data.get("wind", {}).get("speed")
+        }
+        
+        # Update location data for time display
+        st.session_state.last_queried_city = weather_data.get("name")
+        lon = weather_data.get("coord", {}).get("lon")
+        lat = weather_data.get("coord", {}).get("lat")
+        st.session_state.last_queried_coords = (lat, lon) if lat is not None and lon is not None else None
+
+def get_user_timezone() -> tuple[str, bool]:
+    """Get the user's timezone string and whether it was successfully determined."""
+    try:
+        return tzlocal.get_localzone().key, True
+    except Exception:
+        return "UTC", False
+
+def display_time_info(user_local_tz_str: str):
+    """Display time information in the sidebar."""
+    if st.session_state.last_queried_coords:
+        lat, lon = st.session_state.last_queried_coords
+        formatted_user_time, formatted_location_time, location_tz_str = \
+            get_times_for_location(user_local_tz_str, lat, lon)
+
+        st.sidebar.markdown(f"**Your Local Time:**\n{formatted_user_time}")
+
+        if formatted_location_time:
+            st.sidebar.markdown(f"**Time in {st.session_state.last_queried_city}:**\n{formatted_location_time}")
+            if location_tz_str:
+                st.sidebar.caption(f"(Timezone: {location_tz_str})")
+        else:
+            st.sidebar.markdown("**Time in City:**\n_Could not determine_")
+    else:
+        current_time_user_local = datetime.now(pytz.timezone(user_local_tz_str))
+        st.sidebar.markdown(f"**Your Local Time:**\n{current_time_user_local.strftime('%A, %B %d, %Y, %I:%M %p %Z%z')}")
+        st.sidebar.markdown("**Time in City:**\n_No city queried yet_")
 
 def get_weather_data(city_name: str, api_key: str) -> dict | None:
 
