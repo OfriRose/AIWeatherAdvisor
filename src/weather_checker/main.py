@@ -29,6 +29,11 @@ def initialize_session_state():
         st.session_state.ai_question = ""
     if 'ai_response' not in st.session_state:
         st.session_state.ai_response = None
+    # Initialize forecast-related session state
+    if 'forecast_data' not in st.session_state:
+        st.session_state.forecast_data = None
+    if 'show_forecast' not in st.session_state:
+        st.session_state.show_forecast = False
 
 def update_weather_display(weather_data: dict) -> None:
     """Update session state with new weather data and display it."""
@@ -104,6 +109,67 @@ def get_weather_data(city_name: str, api_key: str) -> dict | None:
     except ValueError as e: # For JSON decoding errors
         print(f"Error decoding JSON response: {e}")
         return None
+
+def get_weather_forecast(city_name: str, api_key: str) -> dict | None:
+    """Fetch 5-day weather forecast data."""
+    base_url = "http://api.openweathermap.org/data/2.5/forecast?"
+    complete_url = f"{base_url}q={city_name}&appid={api_key}&units=metric"
+
+    try:
+        response = requests.get(complete_url)
+        response.raise_for_status()
+        data = response.json()
+
+        if data.get("cod") != "200":
+            print(f"Error: {data.get('message', 'Unknown error')}")
+            return None
+
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching forecast: {e}")
+        return None
+
+def display_forecast(forecast_data: dict) -> None:
+    """Display 5-day weather forecast."""
+    if not forecast_data or 'list' not in forecast_data:
+        return
+
+    st.subheader("5-Day Weather Forecast")
+    
+    # Group forecast data by day
+    daily_forecasts = {}
+    for item in forecast_data['list']:
+        date = datetime.fromtimestamp(item['dt']).date()
+        if date not in daily_forecasts:
+            daily_forecasts[date] = {
+                'temp': [],
+                'humidity': [],
+                'description': [],
+                'icon': []
+            }
+        daily_forecasts[date]['temp'].append(item['main']['temp'])
+        daily_forecasts[date]['humidity'].append(item['main']['humidity'])
+        daily_forecasts[date]['description'].append(item['weather'][0]['description'])
+        daily_forecasts[date]['icon'].append(item['weather'][0]['icon'])
+
+    # Display forecast cards in columns
+    cols = st.columns(min(5, len(daily_forecasts)))  # Limit to 5 days
+    for col, (date, data) in zip(cols, list(daily_forecasts.items())[:5]):  # Take only first 5 days
+        with col:
+            st.write(f"**{date.strftime('%A')}**")
+            st.write(f"{date.strftime('%b %d')}")
+            avg_temp = sum(data['temp']) / len(data['temp'])
+            avg_humidity = sum(data['humidity']) / len(data['humidity'])
+            most_common_desc = max(set(data['description']), key=data['description'].count)
+            icon = max(set(data['icon']), key=data['icon'].count)
+            
+            # Display weather icon
+            icon_url = f"http://openweathermap.org/img/wn/{icon}@2x.png"
+            st.image(icon_url, width=50)
+            
+            st.metric("Temp", f"{avg_temp:.1f}°C")
+            st.metric("Humidity", f"{avg_humidity:.0f}%")
+            st.caption(most_common_desc.capitalize())
 
 def display_weather(weather_data: dict):
     """

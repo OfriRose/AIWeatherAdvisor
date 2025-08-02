@@ -2,7 +2,9 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 from src.weather_checker.main import (
-    get_weather_data, 
+    get_weather_data,
+    get_weather_forecast,
+    display_forecast,
     initialize_session_state, 
     update_weather_display,
     get_user_timezone,
@@ -47,10 +49,17 @@ city_name_input = st.text_input(
     key='city_input'
 )
 
+# Add forecast option
+show_forecast = st.checkbox("Show 5-day forecast", value=st.session_state.show_forecast, key='forecast_toggle')
+st.session_state.show_forecast = show_forecast
+
 if st.button('Get Weather', key='get_weather_button'):
     if city_name_input:
         with st.spinner(f'Fetching weather for {city_name_input}...'):
             weather_data = get_weather_data(city_name_input, OPEN_WHEATHER_API_KEY)
+            if show_forecast:
+                forecast_data = get_weather_forecast(city_name_input, OPEN_WHEATHER_API_KEY)
+                st.session_state.forecast_data = forecast_data
 
         if weather_data:
             st.success(f"Weather data for {city_name_input} fetched successfully!")
@@ -91,18 +100,23 @@ if st.session_state.displayed_weather_info:
         st.metric(label="Wind Speed", value=f"{weather['wind_speed']} m/s")
 
     st.info(f"Conditions: {weather['weather_description']}")
+    
+    # Display forecast if enabled
+    if st.session_state.show_forecast and st.session_state.forecast_data:
+        st.markdown("---")
+        display_forecast(st.session_state.forecast_data)
 
     st.markdown("---")
     st.subheader("AI Weather Assistant")
 
     if not GEMINI_API_KEY:
-        st.info("Please add your Gemini API Key to the .env file to use the AI assistant.")
+        st.info("No gemini API key found.")
     else:
         # Text area for user question
         user_ai_question = st.text_area(
             "Ask me a question about the current weather:",
             value=st.session_state.ai_question,
-            placeholder="Ask a question about the weather, e.g.:\n• What should I pack?\n• Is it good weather for outdoor activities?\n• Should I bring an umbrella?",
+            placeholder="•What should I pack?\n• Is it good weather for biking?\n• Should I bring an umbrella?",
             key="ai_question_input",
             height=70
         )
@@ -126,7 +140,7 @@ if st.session_state.displayed_weather_info:
 
         # Display AI's response if available in session state
         if st.session_state.ai_response:
-            st.info("🤖 **AI's Advice:**")
+            st.info("**AI's Advice:**")
             st.write(st.session_state.ai_response)
         elif st.session_state.ai_question and not st.session_state.ai_response:
             # This handles cases where AI call might have failed and response is None
