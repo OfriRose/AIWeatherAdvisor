@@ -13,13 +13,15 @@ from src.weather_checker.HelperFuncs import (
 )
 from src.weather_checker.ai_assistant import get_gemini_weather_advice
 
-# Load API KEY
+# Load and validate API keys
 load_dotenv()
-OPEN_WHEATHER_API_KEY = st.secrets.get("OPENWEATHERMAP_API_KEY", os.getenv("OPENWEATHERMAP_API_KEY"))
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
+API_KEYS = {
+    'weather': st.secrets.get("OPENWEATHERMAP_API_KEY", os.getenv("OPENWEATHERMAP_API_KEY")),
+    'ai': st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
+}
 
-if not OPEN_WHEATHER_API_KEY:
-    st.error("API Key not found. Please set OPENWEATHERMAP_API_KEY in your .env file.")
+if not API_KEYS['weather']:
+    st.error("OpenWeatherMap API Key not found. Please check your configuration.")
     st.stop()
 
 # Configure page and initialize state
@@ -49,16 +51,16 @@ city_name_input = st.text_input(
     key='city_input'
 )
 
-# Add forecast option
+# forecast option
 show_forecast = st.checkbox("Show 5-day forecast", value=st.session_state.show_forecast, key='forecast_toggle')
 st.session_state.show_forecast = show_forecast
 
 if st.button('Get Weather', key='get_weather_button'):
     if city_name_input:
         with st.spinner(f'Fetching weather for {city_name_input}...'):
-            weather_data = get_weather_data(city_name_input, OPEN_WHEATHER_API_KEY)
+            weather_data = get_weather_data(city_name_input, API_KEYS['weather'])
             if show_forecast:
-                forecast_data = get_weather_forecast(city_name_input, OPEN_WHEATHER_API_KEY)
+                forecast_data = get_weather_forecast(city_name_input, API_KEYS['weather'])
                 st.session_state.forecast_data = forecast_data
 
         if weather_data:
@@ -67,10 +69,10 @@ if st.button('Get Weather', key='get_weather_button'):
             st.rerun()  # Update the display
 
         else:
+            # Reset all weather-related session state
+            for key in ['displayed_weather_info', 'last_queried_city', 'last_queried_coords']:
+                st.session_state[key] = None
             st.error(f"'{city_name_input}' not found. Please enter a valid city name.")
-            st.session_state.displayed_weather_info = None
-            st.session_state.last_queried_city = None
-            st.session_state.last_queried_coords = None
             st.rerun()
     else:
         st.warning("Please enter a city name.")
@@ -106,12 +108,12 @@ if st.session_state.displayed_weather_info:
         st.markdown("---")
         display_forecast(st.session_state.forecast_data)
 
-    #AI ASSISTANT
+    # AI ASSISTANT
     st.markdown("---")
     st.subheader("AI Weather Assistant")
 
-    if not GEMINI_API_KEY:
-        st.info("No gemini API key found.")
+    if not API_KEYS['ai']:
+        st.info("No Gemini API key found.")
     else:
         # Text area for user question
         user_ai_question = st.text_area(
@@ -124,25 +126,21 @@ if st.session_state.displayed_weather_info:
 
         # Button to get AI advice
         if st.button("Get AI Advice"):
-            if user_ai_question:
-                # Store the question
-                st.session_state.ai_question = user_ai_question
-
-                with st.spinner("Getting AI advice..."):
-                    # Call the Gemini function with current weather info and user question
-                    st.session_state.ai_response = get_gemini_weather_advice(
-                        st.session_state.displayed_weather_info,
-                        user_ai_question
-                    )
-                st.rerun() # Rerun to display the AI response
-
-            else:
+            if not user_ai_question:
                 st.warning("Please enter a question for the AI assistant.")
+            else:
+                st.session_state.ai_question = user_ai_question
+            
+            with st.spinner("Getting AI advice..."):
+                st.session_state.ai_response = get_gemini_weather_advice(
+                    st.session_state.displayed_weather_info,
+                    user_ai_question
+                )
+            st.rerun()
 
         # Display AI's response
         if st.session_state.ai_response:
             st.info("**AI's Advice:**")
             st.write(st.session_state.ai_response)
-        elif st.session_state.ai_question and not st.session_state.ai_response:
-            # This handles cases where AI call might have failed and response is None
+        elif st.session_state.ai_question:
             st.error("Could not get AI advice. Please check your Gemini API key and try again.")
