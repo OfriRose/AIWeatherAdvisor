@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from src.weather_checker.main import (
+from src.weather_checker.HelperFuncs import (
     get_weather_data,
     get_weather_forecast,
     display_forecast,
@@ -23,9 +23,9 @@ if not OPEN_WHEATHER_API_KEY:
     st.stop()
 
 # Configure page and initialize state
-st.set_page_config(page_title="Global Weather Checker", layout="wide")
-st.title('Global Weather Checker')
-st.write('Enter a city name to get the current weather conditions and local time.')
+st.set_page_config(page_title="AI Weather Assistant", layout="wide")
+st.title('AI Weather Assistant')
+st.write('Enter a city name to get the current weather and ask AI for advice.')
 
 # Initialize session state
 initialize_session_state()
@@ -106,6 +106,7 @@ if st.session_state.displayed_weather_info:
         st.markdown("---")
         display_forecast(st.session_state.forecast_data)
 
+    #AI ASSISTANT
     st.markdown("---")
     st.subheader("AI Weather Assistant")
 
@@ -124,7 +125,7 @@ if st.session_state.displayed_weather_info:
         # Button to get AI advice
         if st.button("Get AI Advice"):
             if user_ai_question:
-                # Store the question in session state
+                # Store the question
                 st.session_state.ai_question = user_ai_question
 
                 with st.spinner("Getting AI advice..."):
@@ -138,7 +139,7 @@ if st.session_state.displayed_weather_info:
             else:
                 st.warning("Please enter a question for the AI assistant.")
 
-        # Display AI's response if available in session state
+        # Display AI's response
         if st.session_state.ai_response:
             st.info("**AI's Advice:**")
             st.write(st.session_state.ai_response)

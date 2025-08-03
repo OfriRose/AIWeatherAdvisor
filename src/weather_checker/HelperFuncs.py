@@ -57,7 +57,7 @@ def update_weather_display(weather_data: dict) -> None:
         st.session_state.last_queried_coords = (lat, lon) if lat is not None and lon is not None else None
 
 def get_user_timezone() -> tuple[str, bool]:
-    """Get the user's timezone string and whether it was successfully determined."""
+    """Get the user's timezone string"""
     try:
         return tzlocal.get_localzone().key, True
     except Exception:

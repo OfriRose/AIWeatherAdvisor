@@ -1,4 +1,4 @@
-# Weather Checker - Data Science Project
+# AI Weather Assistant - Data Science Project
 
 A comprehensive weather analysis application built as part of a Data Science course, combining real-time weather data analysis with AI-powered insights.
 
