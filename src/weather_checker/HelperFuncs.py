@@ -4,6 +4,7 @@ import os
 import pytz 
 import json
 from datetime import datetime
+from typing import Optional, Dict, Union, Tuple, Any
 from dotenv import load_dotenv
 from timezonefinder import TimezoneFinder
 import streamlit as st
@@ -16,24 +17,20 @@ DEFAULT_SETTINGS_FILE = 'default_settings.json'
 
 def initialize_session_state():
     """Initialize all session state variables needed for the Streamlit app."""
-    if 'displayed_weather_info' not in st.session_state:
-        st.session_state.displayed_weather_info = None
-    if 'last_queried_city' not in st.session_state:
-        st.session_state.last_queried_city = None
-    if 'last_queried_coords' not in st.session_state:
-        st.session_state.last_queried_coords = None
-    if 'default_city' not in st.session_state:
-        st.session_state.default_city = load_default_city()
-    # Initialize AI-related session state variables
-    if 'ai_question' not in st.session_state:
-        st.session_state.ai_question = ""
-    if 'ai_response' not in st.session_state:
-        st.session_state.ai_response = None
-    # Initialize forecast-related session state
-    if 'forecast_data' not in st.session_state:
-        st.session_state.forecast_data = None
-    if 'show_forecast' not in st.session_state:
-        st.session_state.show_forecast = False
+    default_states = {
+        'displayed_weather_info': None,
+        'last_queried_city': None,
+        'last_queried_coords': None,
+        'default_city': load_default_city(),
+        'ai_question': "",
+        'ai_response': None,
+        'forecast_data': None,
+        'show_forecast': False
+    }
+    
+    for key, default_value in default_states.items():
+        if key not in st.session_state:
+            st.session_state[key] = default_value
 
 def update_weather_display(weather_data: dict) -> None:
     """Update session state with new weather data and display it."""
@@ -56,7 +53,7 @@ def update_weather_display(weather_data: dict) -> None:
         lat = weather_data.get("coord", {}).get("lat")
         st.session_state.last_queried_coords = (lat, lon) if lat is not None and lon is not None else None
 
-def get_user_timezone() -> tuple[str, bool]:
+def get_user_timezone() -> Tuple[str, bool]:
     """Get the user's timezone string"""
     try:
         return tzlocal.get_localzone().key, True
@@ -83,36 +80,9 @@ def display_time_info(user_local_tz_str: str):
         st.sidebar.markdown(f"**Your Local Time:**\n{current_time_user_local.strftime('%A, %B %d, %Y, %I:%M %p %Z%z')}")
         st.sidebar.markdown("**Time in City:**\n_No city queried yet_")
 
-def get_weather_data(city_name: str, api_key: str) -> dict | None:
-
-    base_url = "http://api.openweathermap.org/data/2.5/weather?"
-    complete_url = f"{base_url}q={city_name}&appid={api_key}&units=metric"
-
-    try:
-        response = requests.get(complete_url)
-        response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
-        data = response.json()
-
-        # Check if the city was not found
-        if data.get("cod") == "404":
-            print(f"Error: City '{city_name}' not found.")
-            return None
-        elif data.get("cod") != 200:
-             print(f"Error: API returned code {data.get('cod', 'N/A')}. Message: {data.get('message', 'No message.')}")
-             return None
-
-
-        return data
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred while making the API request: {e}")
-        return None
-    except ValueError as e: # For JSON decoding errors
-        print(f"Error decoding JSON response: {e}")
-        return None
-
-def get_weather_forecast(city_name: str, api_key: str) -> dict | None:
-    """Fetch 5-day weather forecast data."""
-    base_url = "http://api.openweathermap.org/data/2.5/forecast?"
+def fetch_weather_api(endpoint: str, city_name: str, api_key: str) -> Optional[Dict[str, Any]]:
+    """Generic function to fetch weather data from OpenWeatherMap API."""
+    base_url = f"http://api.openweathermap.org/data/2.5/{endpoint}?"
     complete_url = f"{base_url}q={city_name}&appid={api_key}&units=metric"
 
     try:
@@ -120,14 +90,25 @@ def get_weather_forecast(city_name: str, api_key: str) -> dict | None:
         response.raise_for_status()
         data = response.json()
 
-        if data.get("cod") != "200":
-            print(f"Error: {data.get('message', 'Unknown error')}")
+        if str(data.get("cod")) not in ["200", "201"]:
+            print(f"API Error: {data.get('message', 'Unknown error')}")
             return None
 
         return data
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching forecast: {e}")
+        print(f"Network error: {e}")
         return None
+    except ValueError as e:
+        print(f"Data parsing error: {e}")
+        return None
+
+def get_weather_data(city_name: str, api_key: str) -> Optional[Dict[str, Any]]:
+    """Fetch current weather data."""
+    return fetch_weather_api("weather", city_name, api_key)
+
+def get_weather_forecast(city_name: str, api_key: str) -> Optional[Dict[str, Any]]:
+    """Fetch 5-day weather forecast data."""
+    return fetch_weather_api("forecast", city_name, api_key)
 
 def display_forecast(forecast_data: dict) -> None:
     """Display 5-day weather forecast."""
@@ -171,82 +152,47 @@ def display_forecast(forecast_data: dict) -> None:
             st.metric("Humidity", f"{avg_humidity:.0f}%")
             st.caption(most_common_desc.capitalize())
 
-def display_weather(weather_data: dict):
-    """
-    Displays relevant weather information from the fetched data.
+# Removed redundant display_weather function as it's not used in the Streamlit app
 
-    Args:
-        weather_data (dict): A dictionary containing weather data.
-    """
-    if weather_data:
-        city = weather_data.get("name")
-        country = weather_data.get("sys", {}).get("country")
-        temperature = weather_data.get("main", {}).get("temp")
-        feels_like = weather_data.get("main", {}).get("feels_like")
-        humidity = weather_data.get("main", {}).get("humidity")
-        weather_description = weather_data.get("weather", [])[0].get("description") if weather_data.get("weather") else "N/A"
-        wind_speed = weather_data.get("wind", {}).get("speed")
+TIME_FORMAT = "%A, %B %d, %Y, %I:%M %p %Z%z"
 
-        print(f"\n--- Weather in {city}, {country} ---")
-        print(f"Temperature: {temperature}°C")
-        print(f"Feels like: {feels_like}°C")
-        print(f"Conditions: {weather_description.capitalize()}")
-        print(f"Humidity: {humidity}%")
-        print(f"Wind Speed: {wind_speed} m/s")
-    else:
-        print("Could not display weather data.")
+def format_time_for_zone(tz: Optional[pytz.timezone], reference_time: Optional[datetime] = None) -> str:
+    """Format time for a specific timezone."""
+    try:
+        if not tz:
+            raise pytz.UnknownTimeZoneError("No timezone provided")
+            
+        time = reference_time.astimezone(tz) if reference_time else datetime.now(tz)
+        return time.strftime(TIME_FORMAT)
+    except pytz.UnknownTimeZoneError:
+        return "Could not determine time (invalid timezone)"
 
-def get_times_for_location(user_local_tz_str: str, location_lat: float, location_lon: float) -> tuple[str, str | None, str | None]:
-    """
-    Calculates and formats current times for the user's local timezone and the specified location's timezone.
-
-    Args:
-        user_local_tz_str (str): The IANA timezone string for the user's local system (e.g., 'America/New_York').
-        location_lat (float): Latitude of the location.
-        location_lon (float): Longitude of the location.
-
-    Returns:
-        tuple[str, str | None, str | None]:
-            - Formatted string of user's current local time.
-            - Formatted string of location's current time (or None if timezone not found).
-            - The IANA timezone string of the location (or None if not found).
-    """
-    time_format = "%A, %B %d, %Y, %I:%M %p %Z%z" # Added %Z%z to show timezone abbreviation and offset
-
-    #User's current local time
+def get_times_for_location(user_local_tz_str: str, location_lat: float, location_lon: float) -> Tuple[str, Optional[str], Optional[str]]:
+    """Calculate times for user's local timezone and specified location."""
+    # Get user's timezone
     try:
         user_tz = pytz.timezone(user_local_tz_str)
         user_time = datetime.now(user_tz)
-        formatted_user_time = user_time.strftime(time_format)
+        formatted_user_time = format_time_for_zone(user_tz)
     except pytz.UnknownTimeZoneError:
-        formatted_user_time = "Could not determine your local time (invalid timezone)."
-        user_tz = None # Indicate that user_tz could not be set
+        return ("Could not determine local time", None, None)
 
-    #Location's current time
-    formatted_location_time = None
-    location_tz_str = None
+    # Get location's timezone
+    if None in (location_lat, location_lon):
+        return (formatted_user_time, "Location coordinates not available", None)
 
-    if location_lat is not None and location_lon is not None:
-        location_tz_str = tf.timezone_at(lng=location_lon, lat=location_lat)
-        if location_tz_str:
-            try:
-                location_tz = pytz.timezone(location_tz_str)
-                # If we have a valid user_tz, convert from that to location_tz
-                if user_tz:
-                    location_time = user_time.astimezone(location_tz)
-                else: # Fallback if user_tz detection failed, use UTC as reference
-                    location_time = datetime.now(pytz.utc).astimezone(location_tz)
-                formatted_location_time = location_time.strftime(time_format)
-            except pytz.UnknownTimeZoneError:
-                formatted_location_time = f"Could not determine time for location (unknown timezone: {location_tz_str})."
-        else:
-            formatted_location_time = "Could not determine timezone for location coordinates."
-    else:
-        formatted_location_time = "Location coordinates not available for timezone lookup."
+    location_tz_str = tf.timezone_at(lng=location_lon, lat=location_lat)
+    if not location_tz_str:
+        return (formatted_user_time, "Could not determine location timezone", None)
 
-    return formatted_user_time, formatted_location_time, location_tz_str
+    try:
+        location_tz = pytz.timezone(location_tz_str)
+        formatted_location_time = format_time_for_zone(location_tz, user_time)
+        return (formatted_user_time, formatted_location_time, location_tz_str)
+    except pytz.UnknownTimeZoneError:
+        return (formatted_user_time, f"Invalid timezone: {location_tz_str}", None)
 
-def load_default_city() -> str | None:
+def load_default_city() -> Optional[str]:
     """
     Loads the default city name from the DEFAULT_SETTINGS_FILE.
     Returns the city name if found, otherwise None.
