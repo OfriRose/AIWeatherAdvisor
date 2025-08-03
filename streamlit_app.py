@@ -15,7 +15,7 @@ from src.weather_checker.ai_assistant import get_gemini_weather_advice
 
 # Load API KEY
 load_dotenv()
-API_KEY = st.secrets.get("OPENWEATHERMAP_API_KEY", os.getenv("OPENWEATHERMAP_API_KEY"))
+OPEN_WHEATHER_API_KEY = st.secrets.get("OPENWEATHERMAP_API_KEY", os.getenv("OPENWEATHERMAP_API_KEY"))
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
 
 if not OPEN_WHEATHER_API_KEY:
