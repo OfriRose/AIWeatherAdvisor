@@ -37,7 +37,6 @@ An intelligent weather application that combines real-time weather data with AI-
 ### Key Dependencies
 ```toml
 dependencies = [
-    "pandas >= 2.3.1"          # Data manipulation and analysis
     "streamlit >= 1.47.1"      # Interactive UI and data visualization
     "requests >= 2.32.4"       # HTTP requests for weather API
     "pytz >= 2025.2"          # Timezone calculations
@@ -109,7 +108,7 @@ weather-checker/
 ├── src/
 │   └── weather_checker/
 │       ├── __init__.py
-│       ├── main.py           # Core weather processing logic
+│       ├── HelperFuncs.py           # Core processing logic
 │       └── ai_assistant.py   # AI integration module
 ├── streamlit_app.py         # Web interface
 ├── pyproject.toml          # Project dependencies

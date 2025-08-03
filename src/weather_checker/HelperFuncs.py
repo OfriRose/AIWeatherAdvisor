@@ -257,7 +257,7 @@ def load_default_city() -> str | None:
                 settings = json.load(f)
                 return settings.get('default_city')
         except (json.JSONDecodeError, KeyError):
-            print(f"Warning: Could not read default city from {DEFAULT_SETTINGS_FILE}. File might be corrupted or malformed.")
+            print(f"Warning: Could not read default city from {DEFAULT_SETTINGS_FILE}.")
             return None
     return None
 
