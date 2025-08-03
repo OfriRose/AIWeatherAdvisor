@@ -88,8 +88,13 @@ if st.session_state.displayed_weather_info:
         st.session_state.default_city = weather['city']
         st.success(f"'{weather['city']}' has been set as your default city!")
 
-    # Weather display
-    st.header(f"Current Weather in {weather['city']}, {weather['country']}")
+    # Weather display with icon
+    header_col, icon_col = st.columns([3, 1])
+    with header_col:
+        st.header(f"Current Weather in {weather['city']}, {weather['country']}")
+    with icon_col:
+        icon_url = f"http://openweathermap.org/img/wn/{weather['weather_icon']}@2x.png"
+        st.image(icon_url, width=100)
 
     # Weather metrics
     temp_col, humidity_col, wind_col = st.columns(3)

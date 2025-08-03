@@ -44,6 +44,8 @@ def update_weather_display(weather_data: dict) -> None:
             "humidity": weather_data.get("main", {}).get("humidity"),
             "weather_description": weather_data.get("weather", [])[0].get("description").capitalize() 
                 if weather_data.get("weather") else "N/A",
+            "weather_icon": weather_data.get("weather", [])[0].get("icon")
+                if weather_data.get("weather") else "01d",
             "wind_speed": weather_data.get("wind", {}).get("speed")
         }
         
