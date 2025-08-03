@@ -4,13 +4,13 @@ import os
 import pytz 
 import json
 from datetime import datetime
-from typing import Optional, Dict, Union, Tuple, Any
+from typing import Optional, Dict, Tuple, Any
 from dotenv import load_dotenv
 from timezonefinder import TimezoneFinder
 import streamlit as st
 import tzlocal
 
-# Initialize TimezoneFinder once for efficiency
+# Initialize TimezoneFinder once
 tf = TimezoneFinder()
 
 DEFAULT_SETTINGS_FILE = 'default_settings.json'
@@ -151,8 +151,6 @@ def display_forecast(forecast_data: dict) -> None:
             st.metric("Temp", f"{avg_temp:.1f}°C")
             st.metric("Humidity", f"{avg_humidity:.0f}%")
             st.caption(most_common_desc.capitalize())
-
-# Removed redundant display_weather function as it's not used in the Streamlit app
 
 TIME_FORMAT = "%A, %B %d, %Y, %I:%M %p %Z%z"
 
