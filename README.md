@@ -1,16 +1,32 @@
-# AI Weather Assistant - Data Science Project
+# 🌤️ AI Weather Assistant
 
-A comprehensive weather analysis application built as part of a Data Science course, combining real-time weather data analysis with AI-powered insights.
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aiweatheradvisor.streamlit.app/)
 
-## 🔍 Project Overview
+An intelligent weather application that combines real-time weather data with AI-powered insights to provide personalized weather advice. Built with Python and Streamlit, this project showcases modern data science techniques and AI integration.
 
-This project demonstrates the practical application of data science concepts through:
-- Real-time weather data collection and analysis
-- Time zone data processing and visualization
-- AI-powered weather advice using Google's Gemini model
-- Interactive data visualization with Streamlit
+[Try the Demo](https://aiweatheradvisor.streamlit.app/)
+## ✨ Features
 
-## 🛠️ Technologies Used
+### 🌡️ Real-Time Weather Analytics
+- **Current Conditions**: Temperature, humidity, wind speed, and more
+- **5-Day Forecast**: Plan ahead with detailed weather predictions
+- **Global Coverage**: Access weather data for any city worldwide
+
+### 🤖 AI-Powered Advice
+- **Smart Recommendations**: Get personalized suggestions for activities
+- **Context-Aware**: AI considers current weather conditions
+- **Natural Language**: Ask questions in plain English about the weather
+
+### 🌍 Geographic Intelligence
+- **Automatic Time Zones**: Local time detection and conversion
+- **Location Awareness**: Precise geographic coordinate handling
+- **Global Adaptability**: Works with cities worldwide
+
+### 📊 Interactive Visualization
+- **Real-Time Updates**: Dynamic weather metrics display
+- **Intuitive Interface**: User-friendly data presentation
+
+## 🛠️ Tech Stack
 
 ### Core Technologies
 - **Python** (>= 3.13)
