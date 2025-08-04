@@ -1,6 +1,5 @@
 
 from datetime import datetime
-from time import sleep
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -19,7 +18,7 @@ def initialize_model():
     genai.configure(api_key=GEMINI_API_KEY, transport="rest")
     return genai.GenerativeModel(
         model_name="gemini-2.0-flash",
-        generation_config={"temperature": 0.7, "max_output_tokens": 256}
+        generation_config={"max_output_tokens": 256}
     )
 
 def get_gemini_weather_advice(weather_info: dict, user_question: str) -> str:
@@ -29,10 +28,10 @@ def get_gemini_weather_advice(weather_info: dict, user_question: str) -> str:
     try:
         model = initialize_model()
         prompt = (
-            f"Current conditions in {weather_info['city']}: "
+            f"weather conditions in {weather_info['city']}: "
             f"{weather_info['temperature']}°C, "
             f"{weather_info['weather_description']}.\n"
-            f"Question: {user_question}"
+            f"Question: {user_question} please keep answers short and concise."
         )
         
         time_since_last = (datetime.now() - last_request_time).total_seconds() if last_request_time else 61

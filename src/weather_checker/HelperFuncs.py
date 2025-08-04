@@ -141,8 +141,8 @@ def display_forecast(forecast_data: dict) -> None:
         daily_forecasts[date]['icon'].append(item['weather'][0]['icon'])
 
     # Display forecast cards in columns
-    cols = st.columns(min(5, len(daily_forecasts)))  # Limit to 5 days
-    for col, (date, data) in zip(cols, list(daily_forecasts.items())[:5]):  # Take only first 5 days
+    cols = st.columns(min(5, len(daily_forecasts)))  
+    for col, (date, data) in zip(cols, list(daily_forecasts.items())[:5]):  # Take 5 days
         with col:
             st.write(f"**{date.strftime('%A')}**")
             st.write(f"{date.strftime('%b %d')}")
