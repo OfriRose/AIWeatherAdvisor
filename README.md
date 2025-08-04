@@ -31,7 +31,7 @@ An intelligent weather application that combines real-time weather data with AI-
 ### Core Technologies
 - **Python** (>= 3.13)
 - **Streamlit** - For interactive data visualization and web interface
-- **Google Generative AI** (Gemini) - For intelligent weather advice
+- **Google Generative AI API** (Gemini) - For intelligent weather advice
 - **OpenWeatherMap API** - For real-time weather data
 
 ### Key Dependencies
