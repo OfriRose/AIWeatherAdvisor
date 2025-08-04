@@ -26,19 +26,19 @@ if not API_KEYS['weather']:
 
 # Configure page and initialize state
 st.set_page_config(page_title="AI Weather Assistant", layout="wide")
-st.title('AI Weather Assistant')
+st.markdown("<h1 style='text-align: center; color: #2E86C1; font-family: Arial, sans-serif; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);'>AI Weather Assistant</h1>", unsafe_allow_html=True)
 st.write('Enter a city name to get the current weather and ask AI for advice.')
 
 # Initialize session state
 initialize_session_state()
 
 # Set up time display in sidebar
-st.sidebar.header("Time Information")
+st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 0.8em; color: #2E86C1; margin-bottom: 10px;'>Time Information</div>", unsafe_allow_html=True)
 
 # Get and display user's timezone
 user_local_tz_str, timezone_detected = get_user_timezone()
 if not timezone_detected:
-    st.sidebar.caption("Could not determine your exact local timezone. Defaulting to UTC.")
+    st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 0.8em; color: #666;'>Could not determine your exact local timezone. Defaulting to UTC.</div>", unsafe_allow_html=True)
 
 # Display time information
 display_time_info(user_local_tz_str)

@@ -69,18 +69,23 @@ def display_time_info(user_local_tz_str: str):
         formatted_user_time, formatted_location_time, location_tz_str = \
             get_times_for_location(user_local_tz_str, lat, lon)
 
-        st.sidebar.markdown(f"**Your Local Time:**\n{formatted_user_time}")
+        st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 0.9em; color: #2E86C1; margin-bottom: 5px;'>Your Local Time</div>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<div style='font-family: Arial, sans-serif; font-size: 0.85em; color: #333; margin-bottom: 15px;'>{formatted_user_time}</div>", unsafe_allow_html=True)
 
         if formatted_location_time:
-            st.sidebar.markdown(f"**Time in {st.session_state.last_queried_city}:**\n{formatted_location_time}")
+            st.sidebar.markdown(f"<div style='font-family: Arial, sans-serif; font-size: 0.9em; color: #2E86C1; margin-bottom: 5px;'>Time in {st.session_state.last_queried_city}</div>", unsafe_allow_html=True)
+            st.sidebar.markdown(f"<div style='font-family: Arial, sans-serif; font-size: 0.85em; color: #333; margin-bottom: 5px;'>{formatted_location_time}</div>", unsafe_allow_html=True)
             if location_tz_str:
-                st.sidebar.caption(f"(Timezone: {location_tz_str})")
+                st.sidebar.markdown(f"<div style='font-family: Arial, sans-serif; font-size: 0.75em; color: #666; font-style: italic;'>(Timezone: {location_tz_str})</div>", unsafe_allow_html=True)
         else:
-            st.sidebar.markdown("**Time in City:**\n_Could not determine_")
+            st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 0.9em; color: #2E86C1; margin-bottom: 5px;'>Time in City</div>", unsafe_allow_html=True)
+            st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 0.85em; color: #666; font-style: italic;'>Could not determine</div>", unsafe_allow_html=True)
     else:
         current_time_user_local = datetime.now(pytz.timezone(user_local_tz_str))
-        st.sidebar.markdown(f"**Your Local Time:**\n{current_time_user_local.strftime('%A, %B %d, %Y, %I:%M %p %Z%z')}")
-        st.sidebar.markdown("**Time in City:**\n_No city queried yet_")
+        st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 0.9em; color: #2E86C1; margin-bottom: 5px;'>Your Local Time</div>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<div style='font-family: Arial, sans-serif; font-size: 0.85em; color: #333; margin-bottom: 15px;'>{current_time_user_local.strftime('%A, %B %d, %Y, %I:%M %p %Z%z')}</div>", unsafe_allow_html=True)
+        st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 0.9em; color: #2E86C1; margin-bottom: 5px;'>Time in City</div>", unsafe_allow_html=True)
+        st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 0.85em; color: #666; font-style: italic;'>No city queried yet</div>", unsafe_allow_html=True)
 
 def fetch_weather_api(endpoint: str, city_name: str, api_key: str) -> Optional[Dict[str, Any]]:
     """Generic function to fetch weather data from OpenWeatherMap API."""
