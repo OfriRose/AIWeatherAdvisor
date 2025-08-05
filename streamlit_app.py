@@ -33,7 +33,7 @@ st.write('Enter a city name to get the current weather and ask AI for advice.')
 initialize_session_state()
 
 # Set up time display in sidebar
-st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 0.8em; color: #2E86C1; margin-bottom: 10px;'>Time Information</div>", unsafe_allow_html=True)
+st.sidebar.markdown("<div style='font-family: Arial, sans-serif; font-size: 1.1em; color: #2E86C1; margin-bottom: 10px;'>Time Information</div>", unsafe_allow_html=True)
 
 # Get and display user's timezone
 user_local_tz_str, timezone_detected = get_user_timezone()
@@ -73,7 +73,6 @@ if st.button('Get Weather', key='get_weather_button'):
             for key in ['displayed_weather_info', 'last_queried_city', 'last_queried_coords']:
                 st.session_state[key] = None
             st.error(f"'{city_name_input}' not found. Please enter a valid city name.")
-            st.rerun()
     else:
         st.warning("Please enter a city name.")
 
